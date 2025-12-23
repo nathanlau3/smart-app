@@ -121,25 +121,27 @@ Deno.serve(async (req) => {
     );
 
     // Search with each embedding variation
+    // Now using match_all_content to search BOTH documents and reports
     const searchPromises = embeddings.map((embedding: number[]) =>
       supabase
-        .rpc("match_document_sections", {
+        .rpc("match_all_content", {
           embedding,
           match_threshold: matchThreshold,
+          match_count: 10,
         })
-        .select("id, content")
-        .limit(8),
+        .select("id, content, source_type, similarity"),
     );
 
     const searchResults = await Promise.all(searchPromises);
 
-    // Merge and deduplicate results by ID, keeping unique documents
+    // Merge and deduplicate results by ID + source_type, keeping unique items
     const documentMap = new Map();
     searchResults.forEach((result) => {
       if (result.data) {
-        result.data.forEach((doc: { id: number; content: string }) => {
-          if (!documentMap.has(doc.id)) {
-            documentMap.set(doc.id, doc);
+        result.data.forEach((doc: { id: number; content: string; source_type: string; similarity: number }) => {
+          const key = `${doc.source_type}-${doc.id}`;
+          if (!documentMap.has(key)) {
+            documentMap.set(key, doc);
           }
         });
       }
@@ -148,9 +150,13 @@ Deno.serve(async (req) => {
     const documents = Array.from(documentMap.values());
     const matchError = searchResults.find((r) => r.error)?.error;
 
+    const docCount = documents.filter((d) => (d as { source_type: string }).source_type === 'document').length;
+    const reportCount = documents.filter((d) => (d as { source_type: string }).source_type === 'report').length;
+
     console.log(
-      "Multi-query retrieval - unique documents found:",
+      "Multi-query retrieval - unique items found:",
       documents.length,
+      `(${docCount} documents, ${reportCount} reports)`,
       "error:",
       matchError,
     );
