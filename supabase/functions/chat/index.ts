@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { streamText } from "ai";
 import { codeBlock } from "common-tags";
 import { createOpenAI } from "@ai-sdk/openai";
+import { z } from "zod";
 
 const apiKey = Deno.env.get("OPENAI_API_KEY");
 console.log("OpenAI API Key available:", !!apiKey, "Length:", apiKey?.length);
@@ -139,20 +140,31 @@ Deno.serve(async (req) => {
     const documentMap = new Map();
     searchResults.forEach((result) => {
       if (result.data) {
-        result.data.forEach((doc: { id: number; content: string; source_type: string; similarity: number }) => {
-          const key = `${doc.source_type}-${doc.id}`;
-          if (!documentMap.has(key)) {
-            documentMap.set(key, doc);
-          }
-        });
+        result.data.forEach(
+          (doc: {
+            id: number;
+            content: string;
+            source_type: string;
+            similarity: number;
+          }) => {
+            const key = `${doc.source_type}-${doc.id}`;
+            if (!documentMap.has(key)) {
+              documentMap.set(key, doc);
+            }
+          },
+        );
       }
     });
 
     const documents = Array.from(documentMap.values());
     const matchError = searchResults.find((r) => r.error)?.error;
 
-    const docCount = documents.filter((d) => (d as { source_type: string }).source_type === 'document').length;
-    const reportCount = documents.filter((d) => (d as { source_type: string }).source_type === 'report').length;
+    const docCount = documents.filter(
+      (d) => (d as { source_type: string }).source_type === "document",
+    ).length;
+    const reportCount = documents.filter(
+      (d) => (d as { source_type: string }).source_type === "report",
+    ).length;
 
     console.log(
       "Multi-query retrieval - unique items found:",
@@ -212,39 +224,40 @@ Deno.serve(async (req) => {
         messages: messages,
         maxTokens: 1024,
         temperature: 0,
+        maxSteps: 5,
         tools: {
           count_reports: {
-            description: "Count reports from the database. Use this for questions like 'how many reports', 'berapa jumlah laporan', 'total laporan', etc. Can filter by category, location (polda/polres), or officer name.",
-            parameters: {
-              type: "object",
-              properties: {
-                category: {
-                  type: "string",
-                  description: "Filter by report category name (e.g., 'Pungli', 'Premanisme')",
-                },
-                polda_name: {
-                  type: "string",
-                  description: "Filter by Polda name",
-                },
-                polres_name: {
-                  type: "string",
-                  description: "Filter by Polres name",
-                },
-                officer_name: {
-                  type: "string",
-                  description: "Filter by officer name",
-                },
-              },
-            },
-            execute: async ({ category, polda_name, polres_name, officer_name }: {
+            description:
+              "Count reports from the database. Use this for questions like 'how many reports', 'berapa jumlah laporan', 'total laporan', etc. Can filter by category, location (polda/polres), or officer name.",
+            parameters: z.object({
+              category: z.string().optional().describe(
+                "Filter by report category name (e.g., 'Pungli', 'Premanisme')"
+              ),
+              polda_name: z.string().optional().describe("Filter by Polda name"),
+              polres_name: z.string().optional().describe("Filter by Polres name"),
+              officer_name: z.string().optional().describe("Filter by officer name"),
+            }),
+            execute: async ({
+              category,
+              polda_name,
+              polres_name,
+              officer_name,
+            }: {
               category?: string;
               polda_name?: string;
               polres_name?: string;
               officer_name?: string;
             }) => {
-              console.log("Executing count_reports tool with filters:", { category, polda_name, polres_name, officer_name });
+              console.log("Executing count_reports tool with filters:", {
+                category,
+                polda_name,
+                polres_name,
+                officer_name,
+              });
 
-              let query = supabase.from("view_report_officer").select("*", { count: "exact", head: true });
+              let query = supabase
+                .from("reports")
+                .select("*", { count: "exact", head: true });
 
               if (category) {
                 query = query.ilike("report_category_name", `%${category}%`);
@@ -266,28 +279,34 @@ Deno.serve(async (req) => {
                 return { error: error.message };
               }
 
-              return { count: count || 0, filters: { category, polda_name, polres_name, officer_name } };
+              return {
+                count: count || 0,
+                filters: { category, polda_name, polres_name, officer_name },
+              };
             },
           },
           get_report_stats: {
-            description: "Get aggregated statistics about reports. Use for questions about report distribution, top categories, top locations, etc.",
-            parameters: {
-              type: "object",
-              properties: {
-                group_by: {
-                  type: "string",
-                  enum: ["category", "polda", "polres", "officer"],
-                  description: "What to group the reports by",
-                },
-                limit: {
-                  type: "number",
-                  description: "Maximum number of results to return (default 10)",
-                },
-              },
-              required: ["group_by"],
-            },
-            execute: async ({ group_by, limit = 10 }: { group_by: string; limit?: number }) => {
-              console.log("Executing get_report_stats tool:", { group_by, limit });
+            description:
+              "Get aggregated statistics about reports. Use for questions about report distribution, top categories, top locations, etc.",
+            parameters: z.object({
+              group_by: z.enum(["category", "polda", "polres", "officer"]).describe(
+                "What to group the reports by"
+              ),
+              limit: z.number().optional().describe(
+                "Maximum number of results to return (default 10)"
+              ),
+            }),
+            execute: async ({
+              group_by,
+              limit = 10,
+            }: {
+              group_by: string;
+              limit?: number;
+            }) => {
+              console.log("Executing get_report_stats tool:", {
+                group_by,
+                limit,
+              });
 
               const columnMap: Record<string, string> = {
                 category: "report_category_name",
@@ -302,7 +321,7 @@ Deno.serve(async (req) => {
               }
 
               const { data, error } = await supabase
-                .from("view_report_officer")
+                .from("reports")
                 .select(column);
 
               if (error) {
@@ -317,7 +336,9 @@ Deno.serve(async (req) => {
               // Count occurrences
               const counts: Record<string, number> = {};
               for (const row of data) {
-                const value = (row as unknown as Record<string, string>)[column];
+                const value = (row as unknown as Record<string, string>)[
+                  column
+                ];
                 if (value) {
                   counts[value] = (counts[value] || 0) + 1;
                 }
@@ -333,12 +354,8 @@ Deno.serve(async (req) => {
             },
           },
         },
-        onFinish({ finishReason, usage }) {
-          console.log("Stream finished:", { finishReason, usage });
-        },
       });
 
-      console.log("Returning streaming response");
       return result.toDataStreamResponse({ headers: corsHeaders });
     } catch (streamError) {
       console.error("StreamText error:", streamError);
