@@ -7,13 +7,26 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useChat } from "ai/react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
-import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
+import {
+  useSpeechSynthesis,
+  type TTSProvider,
+} from "@/hooks/useSpeechSynthesis";
 import { useSpeechAnimation } from "@/hooks/useSpeechAnimation";
 import { useAgentAnimation } from "@/hooks/useAgentAnimation";
 import { AnimatedAgent } from "@/components/AnimatedAgent";
 import { inferEmotionFromSentiment, parseEmotion } from "@/lib/emotionMapper";
 import type { Emotion } from "@/types/agent";
-import { Mic, MicOff, Volume2, VolumeX, Send, Bot, User } from "lucide-react";
+import type { OpenAIVoice } from "@/types/tts";
+import {
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Send,
+  Bot,
+  User,
+  Loader2,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -22,6 +35,8 @@ export default function ChatPage() {
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [autoSpeak, setAutoSpeak] = useState(false);
   const [currentEmotion, setCurrentEmotion] = useState<Emotion>("neutral");
+  const [ttsProvider, setTtsProvider] = useState<TTSProvider>("web-speech");
+  const [openAIVoice, setOpenAIVoice] = useState<OpenAIVoice>("alloy");
   const inputRef = useRef<string>("");
   const inputElementRef = useRef<HTMLInputElement>(null);
 
@@ -110,12 +125,16 @@ export default function ChatPage() {
     speak,
     cancel,
     isSpeaking,
+    isLoading: isTTSLoading,
     isSupported: isSpeechSynthesisSupported,
   } = useSpeechSynthesis({
+    provider: ttsProvider,
     lang: "id-ID",
     rate: 1,
     pitch: 1,
     volume: 1,
+    voice: openAIVoice,
+    model: "tts-1",
   });
 
   useEffect(() => {
@@ -160,7 +179,7 @@ export default function ChatPage() {
 
       <div className="flex flex-col lg:flex-row w-full gap-8 grow my-6 sm:my-8 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="lg:w-96 flex-shrink-0">
-          <div className="gradient-border p-6 backdrop-blur-md sticky rounded-3xl shadow-2xl">
+          <div className="gradient-border p-6 top-44 backdrop-blur-md sticky rounded-3xl shadow-2xl">
             <AnimatedAgent
               emotion={agentState.emotion}
               isSpeaking={agentState.isSpeaking}
@@ -234,6 +253,52 @@ export default function ChatPage() {
               <div className="flex items-center gap-3">
                 {isSpeechSynthesisSupported && (
                   <>
+                    {/* TTS Provider Toggle */}
+                    <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg border border-border">
+                      <button
+                        type="button"
+                        onClick={() => setTtsProvider("web-speech")}
+                        className={cn(
+                          "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200",
+                          ttsProvider === "web-speech"
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        Browser
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTtsProvider("openai")}
+                        className={cn(
+                          "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200",
+                          ttsProvider === "openai"
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        OpenAI
+                      </button>
+                    </div>
+
+                    {/* OpenAI Voice Selector */}
+                    {ttsProvider === "openai" && (
+                      <select
+                        value={openAIVoice}
+                        onChange={(e) =>
+                          setOpenAIVoice(e.target.value as OpenAIVoice)
+                        }
+                        className="h-8 px-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="alloy">Alloy</option>
+                        <option value="echo">Echo</option>
+                        <option value="fable">Fable</option>
+                        <option value="onyx">Onyx</option>
+                        <option value="nova">Nova</option>
+                        <option value="shimmer">Shimmer</option>
+                      </select>
+                    )}
+
                     <Button
                       type="button"
                       variant="outline"
@@ -257,7 +322,7 @@ export default function ChatPage() {
                         </>
                       )}
                     </Button>
-                    {isSpeaking && (
+                    {(isSpeaking || isTTSLoading) && (
                       <Button
                         type="button"
                         variant="outline"
@@ -265,7 +330,14 @@ export default function ChatPage() {
                         onClick={cancel}
                         className="border-border hover:border-primary/50 transition-all duration-300"
                       >
-                        Stop Speaking
+                        {isTTSLoading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          "Stop Speaking"
+                        )}
                       </Button>
                     )}
                   </>
