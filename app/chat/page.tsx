@@ -25,7 +25,6 @@ export default function ChatPage() {
   const inputRef = useRef<string>("");
   const inputElementRef = useRef<HTMLInputElement>(null);
 
-  // Agent animation state
   const {
     agentState,
     setEmotion,
@@ -35,7 +34,6 @@ export default function ChatPage() {
     defaultEmotion: "neutral",
   });
 
-  // Speech animation monitoring
   const { isSpeaking: speechAnimationActive, audioLevel: speechAudioLevel } =
     useSpeechAnimation();
 
@@ -71,10 +69,8 @@ export default function ChatPage() {
     inputRef.current = input;
   }, [input]);
 
-  // Create stable submit handler
   const submitVoiceInput = useCallback(() => {
     console.log("handleFinish called, current input:", inputRef.current);
-    // Only submit if there's text
     if (inputRef.current && inputRef.current.trim().length > 0) {
       const syntheticEvent = new Event("submit", {
         bubbles: true,
@@ -95,8 +91,8 @@ export default function ChatPage() {
     onError: (error) => {
       console.error("Speech recognition error:", error);
     },
-    lang: "id-ID", // Indonesian (Bahasa Indonesia)
-    continuous: true, // Keep listening until manually stopped
+    lang: "id-ID",
+    continuous: true,
     handleFinish: submitVoiceInput,
   });
 
@@ -116,13 +112,12 @@ export default function ChatPage() {
     isSpeaking,
     isSupported: isSpeechSynthesisSupported,
   } = useSpeechSynthesis({
-    lang: "id-ID", // Indonesian (Bahasa Indonesia)
+    lang: "id-ID",
     rate: 1,
     pitch: 1,
     volume: 1,
   });
 
-  // Parse emotion from last assistant message and update agent
   useEffect(() => {
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
@@ -134,14 +129,11 @@ export default function ChatPage() {
     }
   }, [messages, setEmotion]);
 
-  // Auto-speak assistant responses
   useEffect(() => {
-    console.log("Auto-speak effect triggered:", { autoSpeak, messagesLength: messages.length });
     if (autoSpeak && messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
       console.log("Last message:", lastMessage);
       if (lastMessage.role === "assistant") {
-        // Parse and remove emotion tags before speaking
         const { content: cleanContent } = parseEmotion(lastMessage.content);
         console.log("Speaking content:", cleanContent);
         speak(cleanContent);
@@ -149,36 +141,63 @@ export default function ChatPage() {
     }
   }, [messages, autoSpeak, speak]);
 
-  // Sync agent speaking state with speech synthesis
   useEffect(() => {
     setAgentSpeaking(isSpeaking);
   }, [isSpeaking, setAgentSpeaking]);
 
-  // Sync audio level with agent
   useEffect(() => {
     setAudioLevel(speechAudioLevel);
   }, [speechAudioLevel, setAudioLevel]);
 
   return (
-    <div className="max-w-7xl flex flex-col items-center w-full h-full relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 pointer-events-none" />
-      <div className="absolute top-10 right-1/4 w-48 h-48 bg-primary/10 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
+    <div className="max-w-[1600px] mx-auto flex flex-col items-center w-full h-full relative">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 pointer-events-none" />
+      <div className="absolute top-20 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
+      <div
+        className="absolute bottom-20 right-1/3 w-48 h-48 bg-primary/5 rounded-full blur-3xl animate-pulse-glow pointer-events-none"
+        style={{ animationDelay: "1s" }}
+      />
 
-      <div className="flex flex-col lg:flex-row w-full gap-6 grow my-4 sm:my-8 p-6 sm:p-8 relative z-10">
-        {/* Animated Agent Section */}
-        <div className="lg:w-80 flex-shrink-0">
-          <div className="gradient-border p-4 backdrop-blur-sm sticky top-4">
+      <div className="flex flex-col lg:flex-row w-full gap-8 grow my-6 sm:my-8 px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="lg:w-96 flex-shrink-0">
+          <div className="gradient-border p-6 backdrop-blur-md sticky rounded-3xl shadow-2xl">
             <AnimatedAgent
               emotion={agentState.emotion}
               isSpeaking={agentState.isSpeaking}
               audioLevel={agentState.audioLevel}
             />
+
+            <div className="mt-6 p-4 rounded-2xl bg-card/50 border border-border/50">
+              <h3 className="text-sm font-semibold text-foreground mb-2">
+                AI Assistant Status
+              </h3>
+              <div className="space-y-2 text-xs text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span>Emotion:</span>
+                  <span className="text-primary font-medium capitalize">
+                    {agentState.emotion}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>State:</span>
+                  <span
+                    className={cn(
+                      "font-medium",
+                      agentState.isSpeaking
+                        ? "text-green-500"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {agentState.isSpeaking ? "Speaking" : "Idle"}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Chat Section */}
-        <div className="flex flex-col w-full gap-6 grow">
-          <div className="gradient-border p-6 backdrop-blur-sm">
+        <div className="flex flex-col w-full gap-6 grow min-h-0">
+          <div className="gradient-border p-5 backdrop-blur-md rounded-2xl shadow-xl">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
                 {isSpeechRecognitionSupported ? (
@@ -255,9 +274,8 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <div className="flex flex-col justify-start gap-6 grow overflow-y-auto px-2 pb-4">
+          <div className="flex flex-col justify-start gap-6 grow overflow-y-auto px-2 pb-4 scroll-smooth">
             {messages.map(({ id, role, content }) => {
-              // Parse and clean emotion tags from assistant messages
               const displayContent =
                 role === "assistant" ? parseEmotion(content).content : content;
 
@@ -265,31 +283,31 @@ export default function ChatPage() {
                 <div
                   key={id}
                   className={cn(
-                    "flex gap-4 items-start animate-in fade-in slide-in-from-bottom-4 duration-500",
+                    "flex gap-4 items-start animate-in fade-in slide-in-from-bottom-4 duration-700",
                     role === "user" ? "flex-row-reverse" : "flex-row",
                   )}
                 >
                   <div
                     className={cn(
-                      "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
+                      "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300",
                       role === "user"
-                        ? "bg-primary/20 border border-primary/30"
-                        : "bg-card border border-border ai-glow",
+                        ? "bg-gradient-to-br from-primary/30 to-primary/10 border-2 border-primary/40 hover:scale-110"
+                        : "bg-card border-2 border-border ai-glow hover:scale-110",
                     )}
                   >
                     {role === "user" ? (
-                      <User className="w-5 h-5 text-primary" />
+                      <User className="w-6 h-6 text-primary" />
                     ) : (
-                      <Bot className="w-5 h-5 text-primary" />
+                      <Bot className="w-6 h-6 text-primary" />
                     )}
                   </div>
 
                   <div
                     className={cn(
-                      "flex-1 max-w-3xl rounded-2xl px-6 py-4 shadow-lg backdrop-blur-sm",
+                      "flex-1 max-w-3xl rounded-2xl px-6 py-5 shadow-xl backdrop-blur-md transition-all duration-300 hover:shadow-2xl",
                       role === "user"
-                        ? "bg-primary/10 border border-primary/20 text-foreground"
-                        : "gradient-border",
+                        ? "bg-gradient-to-br from-primary/15 to-primary/5 border-2 border-primary/25 text-foreground"
+                        : "gradient-border bg-card/50",
                     )}
                   >
                     {role === "assistant" ? (
@@ -352,21 +370,21 @@ export default function ChatPage() {
 
             {isLoading && (
               <div className="flex gap-4 items-start animate-in fade-in duration-500">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-card border border-border ai-glow">
-                  <Bot className="w-5 h-5 text-primary animate-pulse" />
+                <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-card border-2 border-border ai-glow shadow-lg">
+                  <Bot className="w-6 h-6 text-primary animate-pulse" />
                 </div>
-                <div className="gradient-border rounded-2xl px-6 py-4 max-w-3xl">
-                  <div className="flex gap-1">
+                <div className="gradient-border rounded-2xl px-6 py-5 max-w-3xl bg-card/50 shadow-xl">
+                  <div className="flex gap-2">
                     <div
-                      className="w-2 h-2 rounded-full bg-primary animate-bounce"
+                      className="w-3 h-3 rounded-full bg-primary animate-bounce shadow-lg"
                       style={{ animationDelay: "0ms" }}
                     />
                     <div
-                      className="w-2 h-2 rounded-full bg-primary animate-bounce"
+                      className="w-3 h-3 rounded-full bg-primary animate-bounce shadow-lg"
                       style={{ animationDelay: "150ms" }}
                     />
                     <div
-                      className="w-2 h-2 rounded-full bg-primary animate-bounce"
+                      className="w-3 h-3 rounded-full bg-primary animate-bounce shadow-lg"
                       style={{ animationDelay: "300ms" }}
                     />
                   </div>
@@ -375,29 +393,37 @@ export default function ChatPage() {
             )}
 
             {messages.length === 0 && (
-              <div className="flex grow items-center justify-center flex-col gap-4">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
-                  <Bot className="w-24 h-24 text-primary/40 relative" />
+              <div className="flex grow items-center justify-center flex-col gap-6 animate-in fade-in duration-1000">
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-primary/30 blur-3xl rounded-full group-hover:blur-2xl transition-all duration-500" />
+                  <div className="relative p-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border-2 border-primary/30 shadow-2xl group-hover:scale-110 transition-all duration-500">
+                    <Bot className="w-20 h-20 text-primary relative animate-pulse" />
+                  </div>
                 </div>
-                <div className="text-center space-y-2">
-                  <h3 className="text-xl font-semibold gradient-text">
-                    Start a Conversation
+                <div className="text-center space-y-3 max-w-lg">
+                  <h3 className="text-2xl font-bold gradient-text">
+                    Welcome! Let's Start a Conversation
                   </h3>
-                  <p className="text-muted-foreground text-sm max-w-md">
-                    Ask questions about your documents, analyze reports, or get
-                    insights from your data
+                  <p className="text-muted-foreground text-base leading-relaxed">
+                    Ask questions about your documents, analyze police reports
+                    (K3I), or get insights from your data. I'm here to help!
                   </p>
+                  <div className="flex items-center justify-center gap-2 pt-2">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    <span className="text-xs text-muted-foreground">
+                      Ready to assist
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
           <form
-            className="gradient-border p-4 backdrop-blur-sm sticky bottom-0"
+            className="gradient-border p-6 backdrop-blur-md sticky bottom-0 rounded-2xl shadow-2xl"
             onSubmit={handleSubmit}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <Input
                 ref={inputElementRef}
                 type="text"
@@ -405,20 +431,19 @@ export default function ChatPage() {
                 placeholder="Ask anything about your documents..."
                 value={input}
                 onChange={handleInputChange}
-                className="flex-1 bg-background/50 border-border focus:border-primary/50 transition-all duration-300"
+                className="flex-1 h-12 bg-background/60 border-2 border-border focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all duration-300 rounded-xl px-4 text-base shadow-inner"
               />
               <Button
                 type="submit"
                 disabled={isLoading || !authToken}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground ai-glow-lg transition-all duration-300 px-6"
+                className="h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground ai-glow-lg transition-all duration-300 px-8 rounded-xl font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Send className="w-4 h-4 mr-2" />
+                <Send className="w-5 h-5 mr-2" />
                 Send
               </Button>
             </div>
           </form>
         </div>
-        {/* End Chat Section */}
       </div>
     </div>
   );

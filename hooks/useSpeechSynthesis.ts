@@ -10,7 +10,7 @@ interface UseSpeechSynthesisOptions {
 }
 
 export function useSpeechSynthesis({
-  lang = "id-ID", // Default to Indonesian
+  lang = "id-ID",
   rate = 1,
   pitch = 1,
   volume = 1,
@@ -20,7 +20,6 @@ export function useSpeechSynthesis({
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
-    // Check if browser supports Speech Synthesis
     if (!window.speechSynthesis) {
       setIsSupported(false);
       return;
@@ -28,7 +27,6 @@ export function useSpeechSynthesis({
 
     setIsSupported(true);
 
-    // Load available voices
     const loadVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
       setVoices(availableVoices);
@@ -36,21 +34,16 @@ export function useSpeechSynthesis({
 
     loadVoices();
 
-    // Chrome loads voices asynchronously
     if (window.speechSynthesis.onvoiceschanged !== undefined) {
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
 
-    // CHROME FIX: Initialize speech synthesis with user interaction
-    // Chrome requires a user gesture before speech synthesis works
     const initSpeech = () => {
-      // Speak empty utterance to initialize (Chrome requirement)
       const utterance = new SpeechSynthesisUtterance("");
       window.speechSynthesis.speak(utterance);
       console.log("✓ Speech synthesis initialized for Chrome");
     };
 
-    // Listen for any user interaction to initialize
     const events = ["click", "touchstart", "keydown"];
     events.forEach((event) => {
       document.addEventListener(event, initSpeech, { once: true });
@@ -71,21 +64,18 @@ export function useSpeechSynthesis({
         return;
       }
 
-      // Cancel any ongoing speech first
       window.speechSynthesis.cancel();
 
-      // Clean text: remove markdown formatting and special characters
       let cleanText = text
-        .replace(/\*\*/g, '') // Remove bold **
-        .replace(/\*/g, '') // Remove italic *
-        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Remove links [text](url) -> text
-        .replace(/`/g, '') // Remove code backticks
-        .replace(/#{1,6}\s/g, '') // Remove headers
-        .replace(/\n+/g, ' ') // Replace newlines with spaces
-        .replace(/\s+/g, ' ') // Normalize whitespace
+        .replace(/\*\*/g, '')
+        .replace(/\*/g, '')
+        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+        .replace(/`/g, '')
+        .replace(/#{1,6}\s/g, '')
+        .replace(/\n+/g, ' ')
+        .replace(/\s+/g, ' ')
         .trim();
 
-      // Limit text length (some voices have issues with very long text)
       const MAX_LENGTH = 500;
       if (cleanText.length > MAX_LENGTH) {
         cleanText = cleanText.substring(0, MAX_LENGTH) + '...';
@@ -100,18 +90,15 @@ export function useSpeechSynthesis({
       utterance.pitch = pitch;
       utterance.volume = volume;
 
-      // Get fresh voices list (in case it wasn't loaded yet)
       const availableVoices = window.speechSynthesis.getVoices();
 
-      // Try to find a voice for the specified language
       const langPrefix = targetLang.split("-")[0];
-      let voice = availableVoices.find((v) => v.lang.startsWith(targetLang)); // Exact match first
+      let voice = availableVoices.find((v) => v.lang.startsWith(targetLang));
 
       if (!voice) {
         voice = availableVoices.find((v) => v.lang.startsWith(langPrefix));
       }
 
-      // Fallback to English if target language not available
       if (!voice) {
         voice = availableVoices.find((v) => v.lang.startsWith("en"));
       }
@@ -140,15 +127,11 @@ export function useSpeechSynthesis({
         setIsSpeaking(false);
       };
 
-      // CHROME WORKAROUND: Resume before speaking (critical for Chrome)
-      // Chrome often has speech synthesis in a "stuck" state
       window.speechSynthesis.resume();
 
-      // Speak the utterance
       window.speechSynthesis.speak(utterance);
       console.log("→ Speech queued, text length:", cleanText.length);
 
-      // CHROME WORKAROUND: Force resume after queueing (fixes Chrome bug)
       setTimeout(() => {
         window.speechSynthesis.resume();
         console.log("→ Forced resume after queueing");
