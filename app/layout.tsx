@@ -68,6 +68,12 @@ export default async function RootLayout({ children }: PropsWithChildren) {
                       >
                         Sync Report
                       </Link>
+                      <Link
+                        href="/smart-maps"
+                        className="py-4 px-6 cursor-pointer hover:bg-slate-100 font-bold"
+                      >
+                        Smart Maps
+                      </Link>
                     </>
                   )}
                 </div>

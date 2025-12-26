@@ -8,6 +8,7 @@ import {
   Database,
   Brain,
   Zap,
+  Map,
 } from "lucide-react";
 
 export default async function Index() {
@@ -66,6 +67,13 @@ export default async function Index() {
               >
                 <Database className="w-5 h-5 text-primary" />
                 <span className="font-semibold">Sync Reports</span>
+              </Link>
+              <Link
+                href="/smart-maps"
+                className="group relative px-8 py-4 rounded-lg bg-card border border-border hover:border-primary/50 transition-all duration-300 flex items-center gap-3 hover:ai-glow"
+              >
+                <Map className="w-5 h-5 text-primary" />
+                <span className="font-semibold">Smart Maps</span>
               </Link>
             </div>
           ) : (
