@@ -58,12 +58,6 @@ export default async function RootLayout({ children }: PropsWithChildren) {
                         Files
                       </Link>
                       <Link
-                        href="/sync-report"
-                        className="py-4 px-6 cursor-pointer hover:bg-slate-100 font-bold"
-                      >
-                        Sync Report
-                      </Link>
-                      <Link
                         href="/smart-maps"
                         className="py-4 px-6 cursor-pointer hover:bg-slate-100 font-bold"
                       >

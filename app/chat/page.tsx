@@ -169,28 +169,144 @@ export default function ChatPage() {
   }, [speechAudioLevel, setAudioLevel]);
 
   return (
-    <div className="max-w-[1600px] mx-auto flex flex-col items-center w-full h-full relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 pointer-events-none" />
-      <div className="absolute top-20 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
-      <div
-        className="absolute bottom-20 right-1/3 w-48 h-48 bg-primary/5 rounded-full blur-3xl animate-pulse-glow pointer-events-none"
-        style={{ animationDelay: "1s" }}
-      />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
+      <div className="relative w-full max-w-6xl h-[90vh] overflow-hidden bg-card/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+        {/* Header */}
+        <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 bg-gradient-to-r from-primary/10 to-transparent border-b border-border backdrop-blur-xl">
+          <div className="flex items-center gap-4">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Bot className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground">
+                AI Chat Assistant
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Ask questions about your documents
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {isSpeechRecognitionSupported && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleToggleListening}
+                className={cn(
+                  "transition-all duration-300 border-border hover:border-primary/50",
+                  isListening &&
+                    "bg-destructive/10 border-destructive text-destructive hover:bg-destructive/20",
+                )}
+              >
+                {isListening ? (
+                  <>
+                    <MicOff className="h-4 w-4 mr-2" />
+                    Stop
+                  </>
+                ) : (
+                  <>
+                    <Mic className="h-4 w-4 mr-2" />
+                    Voice
+                  </>
+                )}
+              </Button>
+            )}
+            {isSpeechSynthesisSupported && (
+              <>
+                <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setTtsProvider("web-speech")}
+                    className={cn(
+                      "px-2 py-1 text-xs font-medium rounded-md transition-all duration-200",
+                      ttsProvider === "web-speech"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Browser
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTtsProvider("openai")}
+                    className={cn(
+                      "px-2 py-1 text-xs font-medium rounded-md transition-all duration-200",
+                      ttsProvider === "openai"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    OpenAI
+                  </button>
+                </div>
+                {ttsProvider === "openai" && (
+                  <select
+                    value={openAIVoice}
+                    onChange={(e) =>
+                      setOpenAIVoice(e.target.value as OpenAIVoice)
+                    }
+                    className="h-8 px-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="alloy">Alloy</option>
+                    <option value="echo">Echo</option>
+                    <option value="fable">Fable</option>
+                    <option value="onyx">Onyx</option>
+                    <option value="nova">Nova</option>
+                    <option value="shimmer">Shimmer</option>
+                  </select>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleToggleAutoSpeak}
+                  className={cn(
+                    "transition-all duration-300 border-border hover:border-primary/50",
+                    autoSpeak &&
+                      "bg-primary/10 border-primary text-primary hover:bg-primary/20",
+                  )}
+                >
+                  {autoSpeak ? (
+                    <Volume2 className="h-4 w-4" />
+                  ) : (
+                    <VolumeX className="h-4 w-4" />
+                  )}
+                </Button>
+                {(isSpeaking || isTTSLoading) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={cancel}
+                    className="border-border hover:border-primary/50 transition-all duration-300"
+                  >
+                    {isTTSLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Stop"
+                    )}
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
 
-      <div className="flex flex-col lg:flex-row w-full gap-8 grow my-6 sm:my-8 px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="lg:w-96 flex-shrink-0">
-          <div className="gradient-border p-6 top-44 backdrop-blur-md sticky rounded-3xl shadow-2xl">
+        {/* Main Content Area */}
+        <div className="flex flex-1 min-h-0">
+          {/* Agent Sidebar */}
+          <div className="hidden lg:flex flex-shrink-0 w-72 border-r border-border p-4 flex-col items-center justify-center bg-muted/20">
             <AnimatedAgent
               emotion={agentState.emotion}
               isSpeaking={agentState.isSpeaking}
               audioLevel={agentState.audioLevel}
             />
-
-            <div className="mt-6 p-4 rounded-2xl bg-card/50 border border-border/50">
-              <h3 className="text-sm font-semibold text-foreground mb-2">
-                AI Assistant Status
+            <div className="mt-4 p-3 rounded-xl bg-card/50 border border-border/50 w-full">
+              <h3 className="text-xs font-semibold text-foreground mb-2">
+                AI Status
               </h3>
-              <div className="space-y-2 text-xs text-muted-foreground">
+              <div className="space-y-1.5 text-xs text-muted-foreground">
                 <div className="flex items-center justify-between">
                   <span>Emotion:</span>
                   <span className="text-primary font-medium capitalize">
@@ -213,308 +329,183 @@ export default function ChatPage() {
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-col w-full gap-6 grow min-h-0">
-          <div className="gradient-border p-5 backdrop-blur-md rounded-2xl shadow-xl">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
-                {isSpeechRecognitionSupported ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleToggleListening}
+          {/* Chat Area */}
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {messages.map(({ id, role, content }) => {
+                const displayContent =
+                  role === "assistant"
+                    ? parseEmotion(content).content
+                    : content;
+
+                return (
+                  <div
+                    key={id}
                     className={cn(
-                      "transition-all duration-300 border-border hover:border-primary/50",
-                      isListening &&
-                        "bg-destructive/10 border-destructive text-destructive hover:bg-destructive/20 ai-glow",
+                      "flex gap-4 items-start animate-in fade-in slide-in-from-bottom-4 duration-500",
+                      role === "user" ? "flex-row-reverse" : "flex-row",
                     )}
                   >
-                    {isListening ? (
-                      <>
-                        <MicOff className="h-4 w-4 mr-2" />
-                        Stop Listening
-                      </>
-                    ) : (
-                      <>
-                        <Mic className="h-4 w-4 mr-2" />
-                        Voice Input
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Voice input not supported
-                  </p>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3">
-                {isSpeechSynthesisSupported && (
-                  <>
-                    {/* TTS Provider Toggle */}
-                    <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg border border-border">
-                      <button
-                        type="button"
-                        onClick={() => setTtsProvider("web-speech")}
-                        className={cn(
-                          "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200",
-                          ttsProvider === "web-speech"
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        Browser
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setTtsProvider("openai")}
-                        className={cn(
-                          "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200",
-                          ttsProvider === "openai"
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        OpenAI
-                      </button>
-                    </div>
-
-                    {/* OpenAI Voice Selector */}
-                    {ttsProvider === "openai" && (
-                      <select
-                        value={openAIVoice}
-                        onChange={(e) =>
-                          setOpenAIVoice(e.target.value as OpenAIVoice)
-                        }
-                        className="h-8 px-2 text-xs bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      >
-                        <option value="alloy">Alloy</option>
-                        <option value="echo">Echo</option>
-                        <option value="fable">Fable</option>
-                        <option value="onyx">Onyx</option>
-                        <option value="nova">Nova</option>
-                        <option value="shimmer">Shimmer</option>
-                      </select>
-                    )}
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleToggleAutoSpeak}
+                    <div
                       className={cn(
-                        "transition-all duration-300 border-border hover:border-primary/50",
-                        autoSpeak &&
-                          "bg-primary/10 border-primary text-primary hover:bg-primary/20 ai-glow",
+                        "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-300",
+                        role === "user"
+                          ? "bg-gradient-to-br from-primary/30 to-primary/10 border-2 border-primary/40"
+                          : "bg-card border-2 border-border",
                       )}
                     >
-                      {autoSpeak ? (
-                        <>
-                          <Volume2 className="h-4 w-4 mr-2" />
-                          Auto-speak On
-                        </>
+                      {role === "user" ? (
+                        <User className="w-5 h-5 text-primary" />
                       ) : (
-                        <>
-                          <VolumeX className="h-4 w-4 mr-2" />
-                          Auto-speak Off
-                        </>
+                        <Bot className="w-5 h-5 text-primary" />
                       )}
-                    </Button>
-                    {(isSpeaking || isTTSLoading) && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={cancel}
-                        className="border-border hover:border-primary/50 transition-all duration-300"
-                      >
-                        {isTTSLoading ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Loading...
-                          </>
-                        ) : (
-                          "Stop Speaking"
-                        )}
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
+                    </div>
+
+                    <div
+                      className={cn(
+                        "flex-1 max-w-2xl rounded-2xl px-5 py-4 shadow-lg backdrop-blur-md transition-all duration-300",
+                        role === "user"
+                          ? "bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/25 text-foreground"
+                          : "bg-muted/50 border border-border",
+                      )}
+                    >
+                      {role === "assistant" ? (
+                        <div className="prose prose-slate prose-sm max-w-none">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              p: ({ children }) => (
+                                <p className="mb-2 last:mb-0 text-foreground">
+                                  {children}
+                                </p>
+                              ),
+                              ul: ({ children }) => (
+                                <ul className="list-disc ml-4 mb-2 text-foreground">
+                                  {children}
+                                </ul>
+                              ),
+                              ol: ({ children }) => (
+                                <ol className="list-decimal ml-4 mb-2 text-foreground">
+                                  {children}
+                                </ol>
+                              ),
+                              li: ({ children }) => (
+                                <li className="mb-1 text-foreground">
+                                  {children}
+                                </li>
+                              ),
+                              strong: ({ children }) => (
+                                <strong className="font-bold text-primary">
+                                  {children}
+                                </strong>
+                              ),
+                              em: ({ children }) => (
+                                <em className="italic text-foreground/70">
+                                  {children}
+                                </em>
+                              ),
+                              code: ({ children }) => (
+                                <code className="bg-muted px-2 py-0.5 rounded text-sm font-mono text-primary">
+                                  {children}
+                                </code>
+                              ),
+                              pre: ({ children }) => (
+                                <pre className="bg-muted p-4 rounded-lg my-2 overflow-x-auto border border-border">
+                                  {children}
+                                </pre>
+                              ),
+                            }}
+                          >
+                            {displayContent}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="text-foreground">{displayContent}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {isLoading && (
+                <div className="flex gap-4 items-start animate-in fade-in duration-500">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-card border-2 border-border shadow-md">
+                    <Bot className="w-5 h-5 text-primary animate-pulse" />
+                  </div>
+                  <div className="rounded-2xl px-5 py-4 max-w-2xl bg-muted/50 border border-border shadow-lg">
+                    <div className="flex gap-2">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce shadow-md"
+                        style={{ animationDelay: "0ms" }}
+                      />
+                      <div
+                        className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce shadow-md"
+                        style={{ animationDelay: "150ms" }}
+                      />
+                      <div
+                        className="w-2.5 h-2.5 rounded-full bg-primary animate-bounce shadow-md"
+                        style={{ animationDelay: "300ms" }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {messages.length === 0 && (
+                <div className="flex flex-1 items-center justify-center flex-col gap-6 py-12">
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full group-hover:blur-2xl transition-all duration-500" />
+                    <div className="relative p-6 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border-2 border-primary/30 shadow-xl group-hover:scale-110 transition-all duration-500">
+                      <Bot className="w-16 h-16 text-primary relative animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="text-center space-y-3 max-w-md">
+                    <h3 className="text-xl font-bold text-foreground">
+                      Welcome! Let's Start a Conversation
+                    </h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      Ask questions about your documents, analyze police reports
+                      (K3I), or get insights from your data.
+                    </p>
+                    <div className="flex items-center justify-center gap-2 pt-2">
+                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                      <span className="text-xs text-muted-foreground">
+                        Ready to assist
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
 
-          <div className="flex flex-col justify-start gap-6 grow overflow-y-auto px-2 pb-4 scroll-smooth">
-            {messages.map(({ id, role, content }) => {
-              const displayContent =
-                role === "assistant" ? parseEmotion(content).content : content;
-
-              return (
-                <div
-                  key={id}
-                  className={cn(
-                    "flex gap-4 items-start animate-in fade-in slide-in-from-bottom-4 duration-700",
-                    role === "user" ? "flex-row-reverse" : "flex-row",
-                  )}
+            {/* Input Form */}
+            <form
+              className="flex-shrink-0 p-4 border-t border-border bg-card/50 backdrop-blur-xl"
+              onSubmit={handleSubmit}
+            >
+              <div className="flex items-center gap-3">
+                <Input
+                  ref={inputElementRef}
+                  type="text"
+                  autoFocus
+                  placeholder="Ask anything about your documents..."
+                  value={input}
+                  onChange={handleInputChange}
+                  className="flex-1 h-12 bg-background/60 border-2 border-border focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all duration-300 rounded-xl px-4 text-base"
+                />
+                <Button
+                  type="submit"
+                  disabled={isLoading || !authToken}
+                  className="h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 px-6 rounded-xl font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <div
-                    className={cn(
-                      "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300",
-                      role === "user"
-                        ? "bg-gradient-to-br from-primary/30 to-primary/10 border-2 border-primary/40 hover:scale-110"
-                        : "bg-card border-2 border-border ai-glow hover:scale-110",
-                    )}
-                  >
-                    {role === "user" ? (
-                      <User className="w-6 h-6 text-primary" />
-                    ) : (
-                      <Bot className="w-6 h-6 text-primary" />
-                    )}
-                  </div>
-
-                  <div
-                    className={cn(
-                      "flex-1 max-w-3xl rounded-2xl px-6 py-5 shadow-xl backdrop-blur-md transition-all duration-300 hover:shadow-2xl",
-                      role === "user"
-                        ? "bg-gradient-to-br from-primary/15 to-primary/5 border-2 border-primary/25 text-foreground"
-                        : "gradient-border bg-card/50",
-                    )}
-                  >
-                    {role === "assistant" ? (
-                      <div className="prose prose-slate prose-sm max-w-none">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            p: ({ children }) => (
-                              <p className="mb-2 last:mb-0 text-foreground">
-                                {children}
-                              </p>
-                            ),
-                            ul: ({ children }) => (
-                              <ul className="list-disc ml-4 mb-2 text-foreground">
-                                {children}
-                              </ul>
-                            ),
-                            ol: ({ children }) => (
-                              <ol className="list-decimal ml-4 mb-2 text-foreground">
-                                {children}
-                              </ol>
-                            ),
-                            li: ({ children }) => (
-                              <li className="mb-1 text-foreground">
-                                {children}
-                              </li>
-                            ),
-                            strong: ({ children }) => (
-                              <strong className="font-bold text-primary">
-                                {children}
-                              </strong>
-                            ),
-                            em: ({ children }) => (
-                              <em className="italic text-foreground/70">
-                                {children}
-                              </em>
-                            ),
-                            code: ({ children }) => (
-                              <code className="bg-muted px-2 py-0.5 rounded text-sm font-mono text-primary">
-                                {children}
-                              </code>
-                            ),
-                            pre: ({ children }) => (
-                              <pre className="bg-muted p-4 rounded-lg my-2 overflow-x-auto border border-border">
-                                {children}
-                              </pre>
-                            ),
-                          }}
-                        >
-                          {displayContent}
-                        </ReactMarkdown>
-                      </div>
-                    ) : (
-                      <p className="text-foreground">{displayContent}</p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-
-            {isLoading && (
-              <div className="flex gap-4 items-start animate-in fade-in duration-500">
-                <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-card border-2 border-border ai-glow shadow-lg">
-                  <Bot className="w-6 h-6 text-primary animate-pulse" />
-                </div>
-                <div className="gradient-border rounded-2xl px-6 py-5 max-w-3xl bg-card/50 shadow-xl">
-                  <div className="flex gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full bg-primary animate-bounce shadow-lg"
-                      style={{ animationDelay: "0ms" }}
-                    />
-                    <div
-                      className="w-3 h-3 rounded-full bg-primary animate-bounce shadow-lg"
-                      style={{ animationDelay: "150ms" }}
-                    />
-                    <div
-                      className="w-3 h-3 rounded-full bg-primary animate-bounce shadow-lg"
-                      style={{ animationDelay: "300ms" }}
-                    />
-                  </div>
-                </div>
+                  <Send className="w-5 h-5 mr-2" />
+                  Send
+                </Button>
               </div>
-            )}
-
-            {messages.length === 0 && (
-              <div className="flex grow items-center justify-center flex-col gap-6 animate-in fade-in duration-1000">
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-primary/30 blur-3xl rounded-full group-hover:blur-2xl transition-all duration-500" />
-                  <div className="relative p-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border-2 border-primary/30 shadow-2xl group-hover:scale-110 transition-all duration-500">
-                    <Bot className="w-20 h-20 text-primary relative animate-pulse" />
-                  </div>
-                </div>
-                <div className="text-center space-y-3 max-w-lg">
-                  <h3 className="text-2xl font-bold gradient-text">
-                    Welcome! Let's Start a Conversation
-                  </h3>
-                  <p className="text-muted-foreground text-base leading-relaxed">
-                    Ask questions about your documents, analyze police reports
-                    (K3I), or get insights from your data. I'm here to help!
-                  </p>
-                  <div className="flex items-center justify-center gap-2 pt-2">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-xs text-muted-foreground">
-                      Ready to assist
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
+            </form>
           </div>
-
-          <form
-            className="gradient-border p-6 backdrop-blur-md sticky bottom-0 rounded-2xl shadow-2xl"
-            onSubmit={handleSubmit}
-          >
-            <div className="flex items-center gap-4">
-              <Input
-                ref={inputElementRef}
-                type="text"
-                autoFocus
-                placeholder="Ask anything about your documents..."
-                value={input}
-                onChange={handleInputChange}
-                className="flex-1 h-12 bg-background/60 border-2 border-border focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all duration-300 rounded-xl px-4 text-base shadow-inner"
-              />
-              <Button
-                type="submit"
-                disabled={isLoading || !authToken}
-                className="h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground ai-glow-lg transition-all duration-300 px-8 rounded-xl font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send className="w-5 h-5 mr-2" />
-                Send
-              </Button>
-            </div>
-          </form>
         </div>
       </div>
     </div>
