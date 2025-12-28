@@ -1,25 +1,25 @@
-'use client';
+"use client";
 
-import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/use-toast';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import { Upload, FileText, Download } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/use-toast";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { Upload, FileText, Download } from "lucide-react";
 
 export default function FilesPage() {
   const supabase = createClientComponentClient();
   const router = useRouter();
 
-  const { data: documents } = useQuery(['files'], async () => {
+  const { data: documents } = useQuery(["files"], async () => {
     const { data, error } = await supabase
-      .from('documents_with_storage_path')
+      .from("documents_with_storage_path")
       .select();
 
     if (error) {
       toast({
-        variant: 'destructive',
-        description: 'Failed to fetch documents',
+        variant: "destructive",
+        description: "Failed to fetch documents",
       });
       throw error;
     }
@@ -58,26 +58,24 @@ export default function FilesPage() {
 
                 if (selectedFile) {
                   const { error } = await supabase.storage
-                    .from('files')
+                    .from("files")
                     .upload(
                       `${crypto.randomUUID()}/${selectedFile.name}`,
-                      selectedFile
+                      selectedFile,
                     );
 
                   if (error) {
                     toast({
-                      variant: 'destructive',
+                      variant: "destructive",
                       description:
-                        'There was an error uploading the file. Please try again.',
+                        "There was an error uploading the file. Please try again.",
                     });
                     return;
                   }
 
                   toast({
-                    description: 'File uploaded successfully!',
+                    description: "File uploaded successfully!",
                   });
-
-                  router.push('/chat');
                 }
               }}
             />
@@ -94,13 +92,14 @@ export default function FilesPage() {
                   className="gradient-border p-6 cursor-pointer hover:scale-105 transition-all duration-300 group"
                   onClick={async () => {
                     const { data, error } = await supabase.storage
-                      .from('files')
+                      .from("files")
                       .createSignedUrl(document.storage_object_path, 60);
 
                     if (error) {
                       toast({
-                        variant: 'destructive',
-                        description: 'Failed to download file. Please try again.',
+                        variant: "destructive",
+                        description:
+                          "Failed to download file. Please try again.",
                       });
                       return;
                     }
@@ -112,7 +111,10 @@ export default function FilesPage() {
                     <div className="p-3 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                       <FileText className="w-8 h-8 text-primary" />
                     </div>
-                    <p className="text-sm font-medium truncate w-full" title={document.name}>
+                    <p
+                      className="text-sm font-medium truncate w-full"
+                      title={document.name}
+                    >
                       {document.name}
                     </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">

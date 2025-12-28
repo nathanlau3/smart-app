@@ -1,4 +1,3 @@
-
 import { createClient } from "@supabase/supabase-js";
 import { streamText } from "ai";
 import { loadConfig, corsHeaders } from "./lib/config.ts";
@@ -6,7 +5,9 @@ import { EmbeddingService } from "./services/embedding-service.ts";
 import { RAGService } from "./services/rag-service.ts";
 import { LLMService } from "./services/llm-service.ts";
 import { ReportRepository } from "./repositories/report-repository.ts";
+import { DocumentRepository } from "./repositories/document-repository.ts";
 import { createReportTools } from "./tools/report-tools.ts";
+import { createDocumentTools } from "./tools/document-tools.ts";
 import { PromptBuilder } from "./lib/prompt-builder.ts";
 
 Deno.serve(async (req) => {
@@ -39,9 +40,8 @@ Deno.serve(async (req) => {
 
     const lastMessage = messages[messages.length - 1];
     const userQuery = lastMessage?.content || "";
-    const previousMessage = messages.length > 1
-      ? messages[messages.length - 2]?.content
-      : undefined;
+    const previousMessage =
+      messages.length > 1 ? messages[messages.length - 2]?.content : undefined;
 
     const embeddingService = new EmbeddingService(config.embeddingServiceUrl);
     const ragService = new RAGService(supabase);
@@ -51,6 +51,7 @@ Deno.serve(async (req) => {
       config.llmType,
     );
     const reportRepository = new ReportRepository(supabase);
+    const documentRepository = new DocumentRepository(supabase);
 
     const queryVariations = embeddingService.generateQueryVariations(
       userQuery,
@@ -58,16 +59,26 @@ Deno.serve(async (req) => {
     );
     console.log("Query variations:", queryVariations.length);
 
-    const embeddings = await embeddingService.generateEmbeddings(queryVariations);
+    const embeddings = await embeddingService.generateEmbeddings(
+      queryVariations,
+    );
 
     const documents = await ragService.searchDocuments(embeddings);
     const injectedDocs = ragService.formatDocumentsForPrompt(documents);
 
     const systemPrompt = PromptBuilder.buildSystemPrompt(injectedDocs);
 
-    const tools = createReportTools(reportRepository);
+    // Combine report and document tools
+    const reportTools = createReportTools(reportRepository);
+    const documentTools = createDocumentTools(documentRepository);
+    const tools = { ...reportTools, ...documentTools };
 
-    console.log("Starting streamText with LLM:", config.llmType);
+    console.log(
+      "Starting streamText with LLM:",
+      config.llmType,
+      "Tools:",
+      Object.keys(tools).length,
+    );
     const result = streamText({
       model: llmService.getModel(),
       system: systemPrompt,

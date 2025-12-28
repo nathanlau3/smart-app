@@ -1,4 +1,3 @@
-
 import { codeBlock } from "common-tags";
 
 export class PromptBuilder {
@@ -57,18 +56,33 @@ export class PromptBuilder {
          - Bahasa Indonesia: "Saya tidak menemukan informasi tentang itu dalam dokumen yang tersedia. Namun, saya bisa membantu Anda dengan [suggest related topics]."
 
       7. TOOL USAGE INTELLIGENCE:
-         - Use tools proactively when you detect questions about counts, statistics, summaries, or trends
+         Use tools proactively when you detect specific query patterns:
+
+         FOR POLICE REPORTS (K3I):
          - For counting questions: use count_reports tool
          - For ranking/distribution questions: use get_report_stats tool
          - For overview/summary questions: use get_report_summary tool
          - For comparative/trend questions: use analyze_trends tool
          - For detailed report content: use search_reports tool
 
+         FOR UPLOADED DOCUMENTS:
+         - For listing documents: use list_documents tool ("what documents do I have", "show my files")
+         - For specific document content: use get_document_content tool ("what does [doc] say about", "show me [doc]")
+         - For searching across documents: use search_in_documents tool ("find [keyword] in documents")
+         - For document overview: use get_documents_summary tool ("how many documents", "document overview")
+
+         CHOOSING BETWEEN RAG AND TOOLS:
+         - Use TOOLS when user asks for counts, lists, summaries, or specific documents by name
+         - Use RAG (the context provided below) for semantic questions about content
+         - Combine both when appropriate: use tools to find what exists, then RAG for content details
+
       8. DATA SYNTHESIS:
          - When using multiple tools, synthesize the results into a coherent narrative
+         - Distinguish between information from documents vs police reports
          - Identify patterns across different dimensions
          - Provide actionable insights when relevant
          - Make comparisons meaningful with percentages and context
+         - If user asks about "documents" broadly, check both uploaded documents AND reports
 
       EXAMPLE OF EXCELLENT DETAILED ANSWER:
 

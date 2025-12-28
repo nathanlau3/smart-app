@@ -1,4 +1,3 @@
-
 export type LLMType = "gpt-3.5-turbo" | "llama3.1";
 
 export interface Config {
@@ -49,4 +48,31 @@ export interface Report {
   polres_name: string;
   officer_name: string;
   created_at: string;
+}
+
+// Document-related types
+export interface DocumentFilters {
+  name?: string;
+  keyword?: string;
+}
+
+export interface DocumentInfo {
+  id: number;
+  name: string;
+  created_at: string;
+  section_count: number;
+}
+
+export interface DocumentSection {
+  id: number;
+  document_id: number;
+  content: string;
+  document_name?: string;
+}
+
+export interface DocumentWithSections {
+  id: number;
+  name: string;
+  created_at: string;
+  sections: DocumentSection[];
 }

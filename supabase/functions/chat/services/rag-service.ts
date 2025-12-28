@@ -1,4 +1,3 @@
-
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Document } from "../types/index.ts";
 
@@ -8,7 +7,7 @@ export class RAGService {
   async searchDocuments(
     embeddings: number[][],
     matchThreshold: number = 0.3,
-    matchCount: number = 10,
+    matchCount: number = 5, // Reduced to prevent context overflow
   ): Promise<Document[]> {
     console.log(
       `Searching with ${embeddings.length} query variations, threshold ${matchThreshold}`,
@@ -28,7 +27,7 @@ export class RAGService {
 
     const documentMap = new Map<string, Document>();
     searchResults.forEach((result) => {
-      if (result.data) {
+      if (result.data && Array.isArray(result.data)) {
         result.data.forEach((doc: Document) => {
           const key = `${doc.source_type}-${doc.id}`;
           if (!documentMap.has(key)) {
@@ -40,8 +39,12 @@ export class RAGService {
 
     const documents = Array.from(documentMap.values());
 
-    const docCount = documents.filter((d) => d.source_type === "document").length;
-    const reportCount = documents.filter((d) => d.source_type === "report").length;
+    const docCount = documents.filter(
+      (d) => d.source_type === "document",
+    ).length;
+    const reportCount = documents.filter(
+      (d) => d.source_type === "report",
+    ).length;
 
     console.log(
       "Multi-query retrieval - unique items found:",
@@ -63,6 +66,39 @@ export class RAGService {
       return "No documents found";
     }
 
-    return documents.map(({ content }) => content).join("\n\n");
+    // Truncate content to prevent context overflow
+    const truncateContent = (
+      content: string,
+      maxLength: number = 500,
+    ): string => {
+      if (content.length <= maxLength) return content;
+      return content.substring(0, maxLength) + "...[truncated]";
+    };
+
+    // Separate by source type for clarity
+    const docResults = documents.filter((d) => d.source_type === "document");
+    const reportResults = documents.filter((d) => d.source_type === "report");
+
+    const parts: string[] = [];
+
+    if (docResults.length > 0) {
+      parts.push("=== FROM UPLOADED DOCUMENTS ===");
+      parts.push(
+        docResults
+          .map(({ content }) => truncateContent(content))
+          .join("\n\n---\n\n"),
+      );
+    }
+
+    if (reportResults.length > 0) {
+      parts.push("=== FROM POLICE REPORTS (K3I) ===");
+      parts.push(
+        reportResults
+          .map(({ content }) => truncateContent(content))
+          .join("\n\n---\n\n"),
+      );
+    }
+
+    return parts.join("\n\n");
   }
 }
