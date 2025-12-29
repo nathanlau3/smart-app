@@ -1,13 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { WebSpeechTTSOptions, TTSHookReturn } from "@/types/tts";
 import { cleanTextForTTS } from "@/types/tts";
 
-/**
- * Hook for Web Speech API text-to-speech
- * Extracted from original useSpeechSynthesis for provider pattern
- */
 export function useWebSpeechTTS({
   lang = "id-ID",
   rate = 1,

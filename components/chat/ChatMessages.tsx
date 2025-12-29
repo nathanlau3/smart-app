@@ -20,7 +20,6 @@ interface ChatMessagesProps {
 export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
-      {/* Message List */}
       {messages.map(({ id, role, content }) => {
         const displayContent =
           role === "assistant" ? parseEmotion(content).content : content;
@@ -33,7 +32,6 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
               role === "user" ? "flex-row-reverse" : "flex-row",
             )}
           >
-            {/* Avatar */}
             <div
               className={cn(
                 "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-300",
@@ -49,7 +47,6 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
               )}
             </div>
 
-            {/* Message Bubble */}
             <div
               className={cn(
                 "flex-1 max-w-2xl rounded-2xl px-5 py-4 shadow-lg backdrop-blur-md transition-all duration-300",
@@ -114,7 +111,6 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
         );
       })}
 
-      {/* Loading Indicator */}
       {isLoading && (
         <div className="flex gap-4 items-start animate-in fade-in duration-500">
           <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-card border-2 border-border shadow-md">
@@ -139,7 +135,6 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
         </div>
       )}
 
-      {/* Empty State */}
       {messages.length === 0 && (
         <div className="flex flex-1 items-center justify-center flex-col gap-6 py-12">
           <div className="relative group">

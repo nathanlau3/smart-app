@@ -20,19 +20,16 @@ import {
 } from "lucide-react";
 
 export default function SyncReportPage() {
-  // Custom hooks for data and mutations
   const { data: stats, isLoading: statsLoading } = useReportStats();
   const syncMutation = useSyncReports();
   const syncPercentage = useSyncPercentage();
 
-  // Handler functions
   const handleSyncAll = () => {
     syncMutation.mutate();
   };
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Report Sync Dashboard</h1>
@@ -59,7 +56,6 @@ export default function SyncReportPage() {
         </Button>
       </div>
 
-      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Reports"
@@ -92,7 +88,6 @@ export default function SyncReportPage() {
         />
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <CategoryChart
           data={stats?.reports_by_category}
@@ -106,13 +101,10 @@ export default function SyncReportPage() {
         />
       </div>
 
-      {/* Recent Reports */}
       <RecentReportsCard data={stats?.recent_reports} loading={statsLoading} />
     </div>
   );
 }
-
-// Extracted components for better code organization
 
 type StatCardProps = {
   title: string;

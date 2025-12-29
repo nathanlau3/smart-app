@@ -65,10 +65,8 @@ export function useSyncReports() {
 
       // Step 1: Fetch reports from external K3I API
       console.log("Fetching reports from K3I API...");
-      const apiUrl = `${process.env.NEXT_PUBLIC_K3I_URL}/v3/report?order=created_at&orderDirection=desc`;
-      const apiToken =
-        process.env.NEXT_PUBLIC_K3I_TOKEN ||
-        "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiJWVEpHYzJSSFZtdFlNVGt4WXpaMFRGQTFObmRQWms1R09HbFpTRmh5S3k4M00wNHJTM0JsYjA5SVZUMCIsInBvbGRhX2lkIjoiVlRKR2MyUkhWbXRZTVRoME9VTk5ValIyY0daR09GVjFORzFxT1dFdlpXd3lRVzlUYm1abVNUQm9iejAiLCJ0eXBlX2JhY2tlbmQiOiJ3ZWIiLCJpYXQiOjE3NjY4NDYxNjMsImV4cCI6MTc2NjkzMjU2MywiYXVkIjoiRzIwIiwiaXNzIjoiS29ybGFudGFzUG9scmkiLCJzdWIiOiJLM0lHMjAifQ.dqou6p7TWWqkM4UkxJn60A2WJyU7hTOOCJMN8gTCkIwTpyOUvRZxi1-VH8nIq1ob9QK8iTCtyV5yj9WnkHsWeV5p-UcuDDNlRATl_tCDB-M1WHrbY6RrDsWbjXDHfxZ3oimwU5G4hlzXgncQVl_ao1PUXrXFVQSgmNuG_l9eR1AcHQ7NdtbOdIeyKljGUeM4J5RqRUN3ll0nfGVCxQm6JcEt88QRPDq9_V3Sy65kJR5Ro3GfkkrC0gAihs_C1ub1WBioOrvA3ELC2NeRGeITEEPoTkL5S4IUf0bu2gtdVGtD7-COgi-mqt-xNPk8PslEao4L11gcJyKW9Da5NJAskEc2s5UYGYn3EfMWF_EStZSxIMnaqZrCux7vz5tda2mP6t7f4IZDZff7A6IwpMjOdQbEl4E-sSKbmyxMMk1yWCQM2BoZhBNBP26jpmyCm6goV7vE5H4GcS5mEVVlJk2DJWCdSAJ1IeDHjSYiUTNE98fLAZzf_dnrmAvzUCbxLFnLof4I625tpDjlEe1_uqrE-HLKyntw-GQFqGOnbBEmugPEK5lHrLLtZVAePPH_zGNZkndq7OFupWjRl9uQ4Uac-91XSNOWTKThDLERzPW9cr6kpLiLi-MgvBzDhlsJDblOb3dmy3NNXjDB4TDvysnU5tbkkYqhJhagFjPGnjaViNQ";
+      const apiUrl = `${process.env.NEXT_PUBLIC_K3I_URL}/v3/report?order=created_at&orderDirection=desc&limit=100`;
+      const apiToken = process.env.NEXT_PUBLIC_K3I_TOKEN;
 
       const response = await fetch(apiUrl, {
         method: "GET",

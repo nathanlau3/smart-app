@@ -7,12 +7,9 @@ import type { OpenAIVoice } from "@/types/tts";
 import { Mic, MicOff, Volume2, VolumeX, Bot, Loader2 } from "lucide-react";
 
 interface ChatHeaderProps {
-  // Speech Recognition
   isListening: boolean;
   isSpeechRecognitionSupported: boolean;
   onToggleListening: () => void;
-
-  // Text-to-Speech
   ttsProvider: TTSProvider;
   openAIVoice: OpenAIVoice;
   autoSpeak: boolean;
@@ -42,7 +39,6 @@ export function ChatHeader({
 }: ChatHeaderProps) {
   return (
     <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 bg-gradient-to-r from-primary/10 to-transparent border-b border-border backdrop-blur-xl">
-      {/* Title */}
       <div className="flex items-center gap-4">
         <div className="p-2 rounded-xl bg-primary/10">
           <Bot className="w-6 h-6 text-primary" />
@@ -57,9 +53,7 @@ export function ChatHeader({
         </div>
       </div>
 
-      {/* Controls */}
       <div className="flex items-center gap-3">
-        {/* Voice Input Button */}
         {isSpeechRecognitionSupported && (
           <Button
             type="button"
@@ -86,10 +80,8 @@ export function ChatHeader({
           </Button>
         )}
 
-        {/* TTS Controls */}
         {isSpeechSynthesisSupported && (
           <>
-            {/* TTS Provider Toggle */}
             <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg border border-border">
               <button
                 type="button"
@@ -117,7 +109,6 @@ export function ChatHeader({
               </button>
             </div>
 
-            {/* OpenAI Voice Selector */}
             {ttsProvider === "openai" && (
               <select
                 value={openAIVoice}
@@ -135,7 +126,6 @@ export function ChatHeader({
               </select>
             )}
 
-            {/* Auto-speak Toggle */}
             <Button
               type="button"
               variant="outline"
@@ -154,7 +144,6 @@ export function ChatHeader({
               )}
             </Button>
 
-            {/* Stop Speaking Button */}
             {(isSpeaking || isTTSLoading) && (
               <Button
                 type="button"

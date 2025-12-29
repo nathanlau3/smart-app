@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Text is required" }, { status: 400 });
     }
 
-    // OpenAI TTS has a limit of 4096 characters
     const truncatedText = text.length > 4096 ? text.substring(0, 4096) : text;
 
     const response = await fetch(OPENAI_API_URL, {
@@ -47,10 +46,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the audio data as an ArrayBuffer
     const audioData = await response.arrayBuffer();
 
-    // Return audio response with appropriate headers
     return new NextResponse(audioData, {
       status: 200,
       headers: {
@@ -68,9 +65,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * GET handler to check if TTS is configured
- */
 export async function GET() {
   const isConfigured = !!process.env.OPENAI_API_KEY;
   return NextResponse.json({

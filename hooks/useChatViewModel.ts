@@ -15,27 +15,18 @@ import type { Emotion } from "@/types/agent";
 import type { OpenAIVoice } from "@/types/tts";
 
 export interface ChatViewModelState {
-  // Authentication
   authToken: string | null;
-
-  // Chat
   messages: Array<{ id: string; role: string; content: string }>;
   input: string;
   isLoading: boolean;
-
-  // Speech Recognition
   isListening: boolean;
   isSpeechRecognitionSupported: boolean;
-
-  // Text-to-Speech
   ttsProvider: TTSProvider;
   openAIVoice: OpenAIVoice;
   autoSpeak: boolean;
   isSpeaking: boolean;
   isTTSLoading: boolean;
   isSpeechSynthesisSupported: boolean;
-
-  // Agent
   agentState: {
     emotion: Emotion;
     isSpeaking: boolean;
@@ -44,14 +35,9 @@ export interface ChatViewModelState {
 }
 
 export interface ChatViewModelActions {
-  // Chat
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSubmit: (e: React.FormEvent) => void;
-
-  // Speech Recognition
   toggleListening: () => void;
-
-  // Text-to-Speech
   setTtsProvider: (provider: TTSProvider) => void;
   setOpenAIVoice: (voice: OpenAIVoice) => void;
   toggleAutoSpeak: () => void;
@@ -75,7 +61,6 @@ export function useChatViewModel(): ChatViewModel {
   const inputRef = useRef<string>("");
   const inputElementRef = useRef<HTMLInputElement>(null);
 
-  // Agent animation hook
   const {
     agentState,
     setEmotion,
@@ -85,10 +70,8 @@ export function useChatViewModel(): ChatViewModel {
     defaultEmotion: "neutral",
   });
 
-  // Speech animation for audio levels
   const { audioLevel: speechAudioLevel } = useSpeechAnimation();
 
-  // Fetch auth token on mount
   useEffect(() => {
     const getSession = async () => {
       const {
@@ -101,7 +84,6 @@ export function useChatViewModel(): ChatViewModel {
     getSession();
   }, [supabase]);
 
-  // Chat hook from AI SDK
   const {
     messages,
     input,
@@ -114,12 +96,10 @@ export function useChatViewModel(): ChatViewModel {
     headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
   });
 
-  // Keep inputRef in sync for voice input
   useEffect(() => {
     inputRef.current = input;
   }, [input]);
 
-  // Voice input submission handler
   const submitVoiceInput = useCallback(() => {
     if (inputRef.current && inputRef.current.trim().length > 0) {
       const syntheticEvent = new Event("submit", {
@@ -130,7 +110,6 @@ export function useChatViewModel(): ChatViewModel {
     }
   }, [handleSubmit]);
 
-  // Speech recognition hook
   const {
     isListening,
     isSupported: isSpeechRecognitionSupported,
@@ -143,7 +122,6 @@ export function useChatViewModel(): ChatViewModel {
     handleFinish: submitVoiceInput,
   });
 
-  // Text-to-speech hook
   const {
     speak,
     cancel,
@@ -160,7 +138,6 @@ export function useChatViewModel(): ChatViewModel {
     model: "tts-1",
   });
 
-  // Update agent emotion based on assistant messages
   useEffect(() => {
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
@@ -171,7 +148,6 @@ export function useChatViewModel(): ChatViewModel {
     }
   }, [messages, setEmotion]);
 
-  // Auto-speak assistant messages
   useEffect(() => {
     if (autoSpeak && messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
@@ -182,17 +158,14 @@ export function useChatViewModel(): ChatViewModel {
     }
   }, [messages, autoSpeak, speak]);
 
-  // Sync speaking state with agent
   useEffect(() => {
     setAgentSpeaking(isSpeaking);
   }, [isSpeaking, setAgentSpeaking]);
 
-  // Sync audio level with agent
   useEffect(() => {
     setAudioLevel(speechAudioLevel);
   }, [speechAudioLevel, setAudioLevel]);
 
-  // Action handlers
   const handleToggleListening = useCallback(() => {
     toggleListening();
   }, [toggleListening]);

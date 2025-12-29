@@ -8,7 +8,6 @@ interface UseSpeechRecognitionOptions {
   lang?: string;
   continuous?: boolean;
   handleFinish?: () => void;
-  /** Auto-submit after silence (in ms). Set to 0 to disable. Default: 2000ms */
   silenceTimeout?: number;
 }
 
@@ -30,13 +29,11 @@ export function useSpeechRecognition({
   const hasSpokenRef = useRef<boolean>(false);
   const isListeningRef = useRef<boolean>(false);
 
-  // Store callbacks in refs to avoid dependency issues
   const onResultRef = useRef(onResult);
   const onErrorRef = useRef(onError);
   const handleFinishRef = useRef(handleFinish);
   const silenceTimeoutRef = useRef(silenceTimeout);
 
-  // Update refs when props change
   useEffect(() => {
     onResultRef.current = onResult;
     onErrorRef.current = onError;
@@ -44,12 +41,10 @@ export function useSpeechRecognition({
     silenceTimeoutRef.current = silenceTimeout;
   }, [onResult, onError, handleFinish, silenceTimeout]);
 
-  // Keep isListeningRef in sync
   useEffect(() => {
     isListeningRef.current = isListening;
   }, [isListening]);
 
-  // Clear silence timer
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
@@ -57,25 +52,21 @@ export function useSpeechRecognition({
     }
   }, []);
 
-  // Start silence timer - auto-submit after timeout
   const startSilenceTimer = useCallback(() => {
     const timeout = silenceTimeoutRef.current;
     if (!timeout || timeout <= 0) return;
 
     clearSilenceTimer();
     silenceTimerRef.current = setTimeout(() => {
-      // Only auto-submit if user has actually said something
       if (hasSpokenRef.current && fullTranscriptRef.current.trim().length > 0) {
         console.log("Silence detected, auto-submitting...");
         if (recognitionRef.current && isListeningRef.current) {
           recognitionRef.current.stop();
-          // handleFinish will be called in onend
         }
       }
     }, timeout);
   }, [clearSilenceTimer]);
 
-  // Initialize speech recognition once
   useEffect(() => {
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
@@ -110,7 +101,6 @@ export function useSpeechRecognition({
         }
       }
 
-      // User is speaking, reset silence timer
       if (finalTranscript || interimTranscript) {
         hasSpokenRef.current = true;
         clearSilenceTimer();
@@ -125,7 +115,6 @@ export function useSpeechRecognition({
         setTranscript(fullText);
         onResultRef.current?.(fullText);
 
-        // Start silence timer after final result
         startSilenceTimer();
       } else if (!continuous) {
         const currentTranscript = finalTranscript || interimTranscript;
@@ -134,7 +123,6 @@ export function useSpeechRecognition({
           onResultRef.current?.(finalTranscript);
         }
       } else if (interimTranscript) {
-        // Show interim results but don't start timer yet
         const fullText =
           fullTranscriptRef.current +
           (interimTranscript ? " " + interimTranscript : "");
@@ -153,7 +141,6 @@ export function useSpeechRecognition({
 
     recognition.onend = () => {
       clearSilenceTimer();
-      // Only call handleFinish if user has spoken something
       if (hasSpokenRef.current && fullTranscriptRef.current.trim().length > 0) {
         handleFinishRef.current?.();
       }
@@ -169,7 +156,7 @@ export function useSpeechRecognition({
         try {
           recognitionRef.current.stop();
         } catch (e) {
-          // Ignore errors when stopping
+          // Ignore
         }
       }
     };
@@ -196,7 +183,7 @@ export function useSpeechRecognition({
       try {
         recognitionRef.current.stop();
       } catch (e) {
-        // Ignore errors when stopping
+        // Ignore
       }
       setIsListening(false);
       isListeningRef.current = false;

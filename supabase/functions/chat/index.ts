@@ -16,6 +16,8 @@ Deno.serve(async (req) => {
       return new Response("ok", { headers: corsHeaders });
     }
 
+    console.log("url ------>", req.url);
+
     const config = loadConfig();
 
     const authorization = req.headers.get("Authorization");
@@ -36,7 +38,6 @@ Deno.serve(async (req) => {
     });
 
     const { messages } = await req.json();
-    console.log("Received chat request with", messages.length, "messages");
 
     const lastMessage = messages[messages.length - 1];
     const userQuery = lastMessage?.content || "";
@@ -50,6 +51,7 @@ Deno.serve(async (req) => {
       config.llamaBaseUrl,
       config.llmType,
     );
+
     const reportRepository = new ReportRepository(supabase);
     const documentRepository = new DocumentRepository(supabase);
 
@@ -57,13 +59,13 @@ Deno.serve(async (req) => {
       userQuery,
       previousMessage,
     );
-    console.log("Query variations:", queryVariations.length);
 
     const embeddings = await embeddingService.generateEmbeddings(
       queryVariations,
     );
 
     const documents = await ragService.searchDocuments(embeddings);
+    console.log("Documents found:", documents);
     const injectedDocs = ragService.formatDocumentsForPrompt(documents);
 
     const systemPrompt = PromptBuilder.buildSystemPrompt(injectedDocs);
@@ -73,12 +75,6 @@ Deno.serve(async (req) => {
     const documentTools = createDocumentTools(documentRepository);
     const tools = { ...reportTools, ...documentTools };
 
-    console.log(
-      "Starting streamText with LLM:",
-      config.llmType,
-      "Tools:",
-      Object.keys(tools).length,
-    );
     const result = streamText({
       model: llmService.getModel(),
       system: systemPrompt,

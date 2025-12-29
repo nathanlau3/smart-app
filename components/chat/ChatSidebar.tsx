@@ -21,7 +21,6 @@ export function ChatSidebar({ agentState }: ChatSidebarProps) {
         audioLevel={agentState.audioLevel}
       />
 
-      {/* AI Status Card */}
       <div className="mt-4 p-3 rounded-xl bg-card/50 border border-border/50 w-full">
         <h3 className="text-xs font-semibold text-foreground mb-2">
           AI Status

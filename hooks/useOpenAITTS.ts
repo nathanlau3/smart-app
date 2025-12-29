@@ -1,22 +1,13 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import type {
-  OpenAITTSOptions,
-  TTSHookReturn,
-  OpenAIVoice,
-  OpenAIModel,
-} from "@/types/tts";
+import type { OpenAITTSOptions, TTSHookReturn } from "@/types/tts";
 import { cleanTextForTTS } from "@/types/tts";
 
 interface UseOpenAITTSOptions extends OpenAITTSOptions {
-  /** Callback when configuration is checked */
   onConfigCheck?: (configured: boolean) => void;
 }
 
-/**
- * Hook for OpenAI TTS API text-to-speech
- */
 export function useOpenAITTS({
   voice = "alloy",
   model = "tts-1",
@@ -26,13 +17,12 @@ export function useOpenAITTS({
 }: UseOpenAITTSOptions = {}): TTSHookReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSupported, setIsSupported] = useState(true); // Assume supported until proven otherwise
+  const [isSupported, setIsSupported] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Check if OpenAI TTS is configured on mount
   useEffect(() => {
     const checkConfig = async () => {
       try {
@@ -58,7 +48,6 @@ export function useOpenAITTS({
         return;
       }
 
-      // Cancel any existing speech
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
@@ -152,7 +141,6 @@ export function useOpenAITTS({
     setIsLoading(false);
   }, []);
 
-  // Pause and resume not well supported for streamed audio
   const pause = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -165,7 +153,6 @@ export function useOpenAITTS({
     }
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (audioRef.current) {
@@ -187,6 +174,6 @@ export function useOpenAITTS({
     isLoading,
     isSupported,
     error,
-    voices: [], // OpenAI voices are fixed, not dynamic
+    voices: [],
   };
 }

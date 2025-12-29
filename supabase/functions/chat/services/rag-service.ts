@@ -9,10 +9,6 @@ export class RAGService {
     matchThreshold: number = 0.3,
     matchCount: number = 5, // Reduced to prevent context overflow
   ): Promise<Document[]> {
-    console.log(
-      `Searching with ${embeddings.length} query variations, threshold ${matchThreshold}`,
-    );
-
     const searchPromises = embeddings.map((embedding) =>
       this.supabase
         .rpc("match_all_content", {
@@ -45,12 +41,6 @@ export class RAGService {
     const reportCount = documents.filter(
       (d) => d.source_type === "report",
     ).length;
-
-    console.log(
-      "Multi-query retrieval - unique items found:",
-      documents.length,
-      `(${docCount} documents, ${reportCount} reports)`,
-    );
 
     const matchError = searchResults.find((r) => r.error)?.error;
     if (matchError) {
