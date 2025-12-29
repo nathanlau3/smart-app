@@ -64,8 +64,7 @@ Deno.serve(async (req) => {
       queryVariations,
     );
 
-    const documents = await ragService.searchDocuments(embeddings);
-    console.log("Documents found:", documents);
+    const documents = await ragService.searchDocuments(embeddings, userQuery);
     const injectedDocs = ragService.formatDocumentsForPrompt(documents);
 
     const systemPrompt = PromptBuilder.buildSystemPrompt(injectedDocs);
@@ -75,12 +74,15 @@ Deno.serve(async (req) => {
     const documentTools = createDocumentTools(documentRepository);
     const tools = { ...reportTools, ...documentTools };
 
+    // Get model-specific parameters (temperature, maxTokens)
+    const modelParams = llmService.getModelParams();
+
     const result = streamText({
       model: llmService.getModel(),
       system: systemPrompt,
       messages: messages,
-      maxTokens: 1024,
-      temperature: 0,
+      maxTokens: modelParams.maxTokens,
+      temperature: modelParams.temperature,
       maxSteps: 5,
       tools,
     });

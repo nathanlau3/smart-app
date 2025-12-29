@@ -4,14 +4,79 @@ import type { Document } from "../types/index.ts";
 export class RAGService {
   constructor(private supabase: SupabaseClient) {}
 
+  /**
+   * Detect source type based on keywords in the user query
+   * @returns 'document' | 'report' | null (null means search all)
+   */
+  private detectSourceType(query: string): "document" | "report" | null {
+    const lowerQuery = query.toLowerCase();
+
+    const reportKeywords = [
+      "report",
+      "laporan",
+      "k3i",
+      "polisi",
+      "police",
+      "kejadian",
+      "incident",
+      "kriminal",
+      "criminal",
+    ];
+    const documentKeywords = [
+      "document",
+      "dokumen",
+      "file",
+      "upload",
+      "uploaded",
+      "pdf",
+      "sim",
+      "SIM",
+    ];
+
+    const hasReportKeyword = reportKeywords.some((kw) =>
+      lowerQuery.includes(kw),
+    );
+    const hasDocumentKeyword = documentKeywords.some((kw) =>
+      lowerQuery.includes(kw),
+    );
+
+    if (hasReportKeyword && !hasDocumentKeyword) return "report";
+    if (hasDocumentKeyword && !hasReportKeyword) return "document";
+    return null; // Search all sources
+  }
+
   async searchDocuments(
     embeddings: number[][],
+    userQuery: string,
     matchThreshold: number = 0.3,
-    matchCount: number = 5, // Reduced to prevent context overflow
+    matchCount: number = 10, // Increased for better context coverage
   ): Promise<Document[]> {
+    const sourceType = this.detectSourceType(userQuery);
+
+    console.log(
+      `[RAG] Detected source type: ${
+        sourceType ?? "all"
+      } for query: "${userQuery.substring(0, 50)}..."`,
+    );
+
+    // Select the appropriate RPC based on source type
+    const getRpcName = (type: "document" | "report" | null): string => {
+      switch (type) {
+        case "document":
+          return "match_documents";
+        case "report":
+          return "match_reports";
+        default:
+          return "match_all_content";
+      }
+    };
+
+    const rpcName = getRpcName(sourceType);
+    console.log(`[RAG] Using RPC: ${rpcName}`);
+
     const searchPromises = embeddings.map((embedding) =>
       this.supabase
-        .rpc("match_all_content", {
+        .rpc(rpcName, {
           query_embedding: embedding,
           match_threshold: matchThreshold,
           match_count: matchCount,
@@ -35,10 +100,10 @@ export class RAGService {
 
     const documents = Array.from(documentMap.values());
 
-    const docCount = documents.filter(
+    const _docCount = documents.filter(
       (d) => d.source_type === "document",
     ).length;
-    const reportCount = documents.filter(
+    const _reportCount = documents.filter(
       (d) => d.source_type === "report",
     ).length;
 
@@ -59,7 +124,7 @@ export class RAGService {
     // Truncate content to prevent context overflow
     const truncateContent = (
       content: string,
-      maxLength: number = 500,
+      maxLength: number = 2500,
     ): string => {
       if (content.length <= maxLength) return content;
       return content.substring(0, maxLength) + "...[truncated]";
